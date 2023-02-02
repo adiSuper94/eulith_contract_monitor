@@ -1,7 +1,7 @@
 # eulith_contract_monitor
 
 ## Setup Local Chain
-I am using [foundry](https://github.com/foundry-rs/foundry) to setup the basic local infra. Foundry seems to have pretty good documentation. Almost every setup step below is from the [Foundry Book](https://book.getfoundry.sh/). The list below just serves the purpose of showing the high level sequence of steps. For any details, offical documentation. 
+I am using [foundry](https://github.com/foundry-rs/foundry) to setup the basic local infra. Foundry seems to have pretty good documentation. Almost every setup step below is from the [Foundry Book](https://book.getfoundry.sh/). The section of the doc just serves the purpose of showing the high level sequence of steps. For any details, offical documentation. 
 
 - Install foundry : `curl -L https://foundry.paradigm.xyz | bash`
 - Init foundry project with basic contract : `forge init eulith_foundry`
