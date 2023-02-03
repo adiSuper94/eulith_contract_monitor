@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 bindings = { path = "../bindings" }
+ethers = "1.0.2"
+eyre = "0.6.8"
 tokio = { version = "1.25.0", features = ["full"] }
-web3 = "0.18.0"
-
