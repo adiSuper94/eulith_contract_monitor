@@ -8,6 +8,7 @@ I am using [foundry](https://github.com/foundry-rs/foundry) to setup the basic l
 
 Once contracts are built and `anvil` has spun up, we can depoly the contract on to the chain. 
 To deploy via cli: To do this run `forge create ${contract_name} --private-key ${key} --rpc-url ${local_chain_url}`
+
 Note: contract should have already been built using `forge` before deployment.
 
 
