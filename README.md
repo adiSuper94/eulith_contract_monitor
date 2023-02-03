@@ -20,4 +20,4 @@ Note: contract should have already been built using `forge` before deployment.
 
 
 ### Libs used
-(Cargo.toml)[./app/Cargo.toml]
+[Cargo.toml](./app/Cargo.toml)
