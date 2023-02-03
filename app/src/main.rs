@@ -1,3 +1,5 @@
+use bindings::counter::Counter;
+
 #[tokio::main]
 async fn main() {
     async_fn().await;
