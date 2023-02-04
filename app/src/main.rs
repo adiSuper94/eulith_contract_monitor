@@ -4,12 +4,18 @@ use std::{fs, io::Result};
 use web3::{
     self,
     contract::Contract,
+    ethabi::ParamType,
     futures::StreamExt,
     transports::{self, Http},
-    types::{FilterBuilder, H160},
+    types::{FilterBuilder, Log, H160},
     Web3,
 };
 const RPC_URL: &str = "http://localhost:8545";
+const CONTRACT_MONITOR_SLEEP: u64 = 10;
+const EVENT_MONITOR_SLEEP: u64 = 1;
+const MUTATOR_SLEEP: u64 = 3;
+const EXIT_CONDITION_COUNTER_SIZE: u128 = 5;
+const MAX_INCREMENTS_COUNT: u128 = 25;
 
 #[tokio::main]
 async fn main() -> web3::Result<()> {
@@ -60,12 +66,12 @@ async fn monitor_contract(contract: &Contract<Http>) -> web3::contract::Result<(
         let tx = contract.query("number", (), None, web3::contract::Options::default(), None);
         let res: web3::types::U256 = tx.await?;
         let res: u128 = res.low_u128();
-        if res > 5 {
+        if res > EXIT_CONDITION_COUNTER_SIZE {
             println!("contract.number is :: {res}! Bye!!!");
             break;
         }
         println!("contract.number is :: {res}");
-        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(CONTRACT_MONITOR_SLEEP)).await;
     }
     Ok(())
 }
@@ -76,13 +82,25 @@ async fn monitor_contract_events(web3: &Web3<Http>, contract: &Contract<Http>) -
         .build();
 
     let filter = web3.eth_filter().create_logs_filter(event_filter).await?;
-    let event_stream = filter.stream(time::Duration::from_secs(5));
+    let event_stream = filter.stream(time::Duration::from_secs(EVENT_MONITOR_SLEEP));
     web3::futures::pin_mut!(event_stream);
     loop {
         let event = event_stream.next().await.unwrap();
         match event {
             Ok(log) => {
-                println!("Log:: {:?}", log.topics);
+                let count_option = parse_count_from_log(log);
+                match count_option {
+                    Some(num) => {
+                        if num > EXIT_CONDITION_COUNTER_SIZE {
+                            println!("EVENT: contract.number is :: {num}! Bye!!!");
+                            break;
+                        }
+                        println!("EVENT: contract.number is :: {num}!");
+                    }
+                    None => {
+                        println!("Error occured while processing Logs");
+                    }
+                }
             }
             Err(error) => {
                 println!("Error occured while processing event : {error:?}");
@@ -94,16 +112,28 @@ async fn monitor_contract_events(web3: &Web3<Http>, contract: &Contract<Http>) -
 }
 
 async fn mutate_contract(contract: &Contract<Http>, from: &H160) -> web3::contract::Result<()> {
-    let mut counter: u8 = 0;
+    let mut counter: u128 = 0;
     loop {
         let tx = contract.call("increment", (), *from, web3::contract::Options::default());
         let _res = tx.await?;
         println!("called inc on contract");
         counter += 1;
-        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
-        if counter > 10 {
+        tokio::time::sleep(tokio::time::Duration::from_secs(MUTATOR_SLEEP)).await;
+        if counter > MAX_INCREMENTS_COUNT {
             break;
         }
     }
     Ok(())
+}
+
+fn parse_count_from_log(log: Log) -> Option<u128> {
+    let data = log.data.0.as_slice();
+    let token_result = web3::ethabi::decode(&[ParamType::Uint(256)], data);
+    match &token_result {
+        Ok(tokens) => {
+            let uint_number = tokens[0].clone().into_uint()?;
+            Some(uint_number.low_u128())
+        }
+        Err(_err) => None,
+    }
 }
