@@ -2,10 +2,12 @@
 pragma solidity ^0.8.13;
 
 contract Counter {
-    uint public number = 0;
-    event Log(uint updatedVal);
-    
-    function setNumber(uint newNumber) public {
+    uint256 public number = 0;
+    event Log(uint256 updatedVal);
+    constructor() {
+        number = 0;
+    }
+    function setNumber(uint256 newNumber) public {
         number = newNumber;
     }
 

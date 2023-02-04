@@ -21,11 +21,13 @@ async fn main() -> web3::Result<()> {
         .await
         .unwrap();
     println!("contract deployment result: {res:?}");
-    let contract_monitor = monitor_contract(&res, &accounts[0]);
+    let contract_monitor = monitor_contract(&res);
     let event_monitor = monitor_contract_events(&web3, &res);
+    let mutator = mutate_contract(&res, &accounts[0]);
     tokio::select! {
-        _val = contract_monitor =>  {println!("a")},
-        _val = event_monitor  => {println!("b")},
+        _val = contract_monitor =>  {println!("contract monitor exit")},
+        _val = event_monitor  => {println!("event monitor exit")},
+        _val = mutator => {println!("mutator exit")}
     };
     Ok(())
 }
@@ -53,16 +55,17 @@ fn fetch_counter_contract() -> Result<Value> {
     Ok(value)
 }
 
-async fn monitor_contract(contract: &Contract<Http>, from: &H160) -> web3::contract::Result<()> {
+async fn monitor_contract(contract: &Contract<Http>) -> web3::contract::Result<()> {
     loop {
-        let tx = contract
-            .call("number", (), *from, web3::contract::Options::default())
-            .await?
-            .into();
-        if tx > 5 {
-            println!("tx is :: {tx}");
+        let tx = contract.query("number", (), None, web3::contract::Options::default(), None);
+        let res: web3::types::U256 = tx.await?;
+        let res: u128 = res.low_u128();
+        if res > 5 {
+            println!("contract.number is :: {res}! Bye!!!");
             break;
         }
+        println!("contract.number is :: {res}");
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
     }
     Ok(())
 }
@@ -79,12 +82,27 @@ async fn monitor_contract_events(web3: &Web3<Http>, contract: &Contract<Http>) -
         let event = event_stream.next().await.unwrap();
         match event {
             Ok(log) => {
-                println!("Log:: {log:?}");
+                println!("Log:: {:?}", log.topics);
             }
             Err(error) => {
                 println!("Error occured while processing event : {error:?}");
                 break;
             }
+        }
+    }
+    Ok(())
+}
+
+async fn mutate_contract(contract: &Contract<Http>, from: &H160) -> web3::contract::Result<()> {
+    let mut counter: u8 = 0;
+    loop {
+        let tx = contract.call("increment", (), *from, web3::contract::Options::default());
+        let _res = tx.await?;
+        println!("called inc on contract");
+        counter += 1;
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+        if counter > 10 {
+            break;
         }
     }
     Ok(())
