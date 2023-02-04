@@ -26,10 +26,9 @@ Note: contract should have already been built using `forge` before deployment.
 - run `forge build`. This will compile the solidity contracts, and dump them under `contracts/out/`. Ensure that `out` has the compiled jsons. Our main programs will read files from this location. 
 - `cd` back to the root dir, and run `cargo run`.
 
-tldr
+#### tl;dr
 ```
 anvil & cd contracts && forge build && cd ../ && cargo run
-
 ```
 
 #### Libs used
