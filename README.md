@@ -1,4 +1,4 @@
-# eulith_contract_monitor
+# solidity_contract_monitor
 
 ## Overview
 This projects compiles and deploys a simple contract written in solidity on to the local block chain.
